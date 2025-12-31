@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+    <title>HE</title>
+    <style>
+        @font-face {
+            font-family: 'UI';
+            src: url('ui.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'UI', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .background img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(15px);
+            transform: scale(1.05);
+        }
+        .mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.3);
+            z-index: -1;
+        }
+        .time {
+            font-size: 8rem;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        .search-container {
+            width: 100%;
+            max-width: 680px;
+            position: relative;
+        }
+        .search-box {
+            width: 100%;
+            position: relative;
+        }
+        #search-input {
+            width: 100%;
+            padding: 1rem 1.5rem 1rem 4.5rem;
+            border: none;
+            border-radius: 35px;
+            font-size: 1rem;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            outline: none;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+        #search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        #search-input:focus {
+            background-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+        #search-btn {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        #search-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .engine-toggle {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+            overflow: hidden;
+        }
+        .engine-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .engine-toggle img, .engine-item img, .engine-modal-item img {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+        }
+        .engine-list {
+            position: absolute;
+            left: 1rem;
+            top: calc(100% + 10px);
+            display: flex;
+            gap: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            padding: 8px;
+            border-radius: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 9;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 200px;
+        }
+        .engine-list.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .engine-item {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+        .engine-item:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .engine-item.active {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+        .top-btn-group {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        #upload-btn, #about-btn, #share-btn {
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        #upload-btn:hover, #about-btn:hover, #share-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        #image-upload {
+            display: none;
+        }
+        .about-modal, .engine-modal, .share-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .about-modal.show, .engine-modal.show, .share-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-window, .engine-modal-window, .share-modal-window {
+            width: 90%;
+            max-width: 600px;
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+        .engine-modal-window {
+            max-width: 400px;
+            text-align: center;
+        }
+        .share-modal-window {
+            max-width: 420px;
+            text-align: center;
+        }
+        .engine-modal-title, .share-modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+        .engine-modal-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+        }
+        .engine-modal-item {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .engine-modal-item:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        .engine-modal-item.active {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+        .share-qrcode {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 1.5rem;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .share-qrcode img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .share-link-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.8rem 1rem;
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+        #share-link {
+            flex: 1;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        #copy-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        #copy-btn:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .share-desc {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .close-modal, .close-engine-modal, .close-share-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .close-modal:hover, .close-engine-modal:hover, .close-share-modal:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .about-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .about-content img {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+        .custom-contextmenu {
+            position: fixed;
+            width: 160px;
+            background-color: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+        .custom-contextmenu.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .contextmenu-item {
+            padding: 0.6rem 1rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        .contextmenu-item:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .contextmenu-item:not(:last-child) {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        @media (max-width: 768px) {
+            .time {
+                font-size: 5rem;
+            }
+            .search-container {
+                max-width: 90%;
+            }
+            .top-btn-group {
+                top: 1rem;
+                right: 1rem;
+            }
+            #upload-btn, #about-btn, #share-btn {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            .modal-window, .engine-modal-window, .share-modal-window {
+                padding: 1.5rem;
+            }
+            .engine-modal-item {
+                width: 60px;
+                height: 60px;
+            }
+            .share-qrcode {
+                width: 150px;
+                height: 150px;
+            }
+        }
+        @media (max-width: 480px) {
+            .time {
+                font-size: 3.5rem;
+            }
+            .engine-toggle {
+                width: 36px;
+                height: 36px;
+            }
+            .engine-item {
+                width: 32px;
+                height: 32px;
+            }
+            .engine-modal-item {
+                width: 50px;
+                height: 50px;
+            }
+            .share-qrcode {
+                width: 130px;
+                height: 130px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background">
+        <img id="bg-img" src="" alt="背景图片">
+    </div>
+    <div class="mask"></div>
+
+    <div class="top-btn-group">
+        <input type="file" id="image-upload" accept="image/*">
+        <button id="upload-btn">上传背景图</button>
+        <button id="about-btn">关于</button>
+        <button id="share-btn">分享</button>
+    </div>
+
+    <div class="time" id="time"></div>
+
+    <div class="search-container">
+        <div class="search-box">
+            <button class="engine-toggle" id="engine-toggle">
+                <img src="必应.png" alt="必应">
+            </button>
+            <div class="engine-list" id="engine-list">
+                <button class="engine-item" data-engine="baidu" data-img="百度.png">
+                    <img src="百度.png" alt="百度">
+                </button>
+                <button class="engine-item active" data-engine="bing" data-img="必应.png">
+                    <img src="必应.png" alt="必应">
+                </button>
+                <button class="engine-item" data-engine="douyin" data-img="抖音.png">
+                    <img src="抖音.png" alt="抖音">
+                </button>
+                <button class="engine-item" data-engine="edge" data-img="Edge.png">
+                    <img src="Edge.png" alt="Edge插件">
+                </button>
+                <button class="engine-item" data-engine="music" data-img="音乐.png">
+                    <img src="音乐.png" alt="音乐搜索">
+                </button>
+            </div>
+            <input type="text" id="search-input" placeholder="输入网址/搜索内容/插件名称/音乐名称，按回车或点击图标跳转/搜索...">
+            <button id="search-btn">🔍</button>
+        </div>
+    </div>
+
+    <div class="about-modal" id="about-modal">
+        <div class="modal-window">
+            <button class="close-modal" id="close-modal">×</button>
+            <div class="about-content">
+                <img src="about.svg" alt="关于页面">
+            </div>
+        </div>
+    </div>
+
+    <div class="engine-modal" id="engine-modal">
+        <div class="engine-modal-window">
+            <button class="close-engine-modal" id="close-engine-modal">×</button>
+            <div class="engine-modal-title">选择搜索引擎</div>
+            <div class="engine-modal-list" id="engine-modal-list">
+                <button class="engine-modal-item" data-engine="baidu" data-img="百度.png">
+                    <img src="百度.png" alt="百度">
+                </button>
+                <button class="engine-modal-item active" data-engine="bing" data-img="必应.png">
+                    <img src="必应.png" alt="必应">
+                </button>
+                <button class="engine-modal-item" data-engine="douyin" data-img="抖音.png">
+                    <img src="抖音.png" alt="抖音">
+                </button>
+                <button class="engine-modal-item" data-engine="edge" data-img="Edge.png">
+                    <img src="Edge.png" alt="Edge插件">
+                </button>
+                <button class="engine-modal-item" data-engine="music" data-img="音乐.png">
+                    <img src="音乐.png" alt="音乐搜索">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="share-modal" id="share-modal">
+        <div class="share-modal-window">
+            <button class="close-share-modal" id="close-share-modal">×</button>
+            <div class="share-modal-title">分享本站</div>
+            <div class="share-qrcode">
+                <img src="qr.png" alt="分享二维码">
+            </div>
+            <div class="share-link-box">
+                <input type="text" id="share-link" value="hyqy.github.io/index" readonly>
+                <button id="copy-btn">📋</button>
+            </div>
+            <div class="share-desc">扫码或复制链接，即可快速分享给好友</div>
+        </div>
+    </div>
+
+    <div class="custom-contextmenu" id="custom-menu">
+        <div class="contextmenu-item" id="menu-about">关于</div>
+        <div class="contextmenu-item" id="menu-engine">设置引擎</div>
+        <div class="contextmenu-item" id="menu-wallpaper">壁纸</div>
+        <div class="contextmenu-item" id="menu-share">分享</div>
+    </div>
+
+    <script>
+        function setRandomBackground() {
+            const randomNum = Math.floor(Math.random() * 10) + 1;
+            const bgImg = document.getElementById('bg-img');
+            bgImg.src = `wallpaper${randomNum}.png`;
+            bgImg.onerror = function() {
+                bgImg.src = 'https://picsum.photos/1920/1080?random=' + randomNum;
+            };
+        }
+        function updateTime() {
+            const now = new Date();
+            let hours = now.getHours().toString().padStart(2, '0');
+            let minutes = now.getMinutes().toString().padStart(2, '0');
+            const timeElement = document.getElementById('time');
+            timeElement.textContent = `${hours}:${minutes}`;
+        }
+        let currentEngine = 'bing';
+        let currentImg = '必应.png';
+        const engineToggle = document.getElementById('engine-toggle');
+        const engineList = document.getElementById('engine-list');
+        const engineItems = document.querySelectorAll('.engine-item');
+        const engineModal = document.getElementById('engine-modal');
+        const engineModalList = document.getElementById('engine-modal-list');
+        const engineModalItems = document.querySelectorAll('.engine-modal-item');
+        const closeEngineModal = document.getElementById('close-engine-modal');
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const uploadBtn = document.getElementById('upload-btn');
+        const imageUpload = document.getElementById('image-upload');
+        const aboutBtn = document.getElementById('about-btn');
+        const aboutModal = document.getElementById('about-modal');
+        const closeModal = document.getElementById('close-modal');
+        const shareBtn = document.getElementById('share-btn');
+        const shareModal = document.getElementById('share-modal');
+        const closeShareModal = document.getElementById('close-share-modal');
+        const shareLink = document.getElementById('share-link');
+        const copyBtn = document.getElementById('copy-btn');
+        const customMenu = document.getElementById('custom-menu');
+        const menuAbout = document.getElementById('menu-about');
+        const menuEngine = document.getElementById('menu-engine');
+        const menuWallpaper = document.getElementById('menu-wallpaper');
+        const menuShare = document.getElementById('menu-share');
+
+        function openEngineModal() {
+            engineModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            hideCustomMenu();
+        }
+        function closeEngineModalFunc() {
+            engineModal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+        function changeEngine(engine, img) {
+            currentEngine = engine;
+            currentImg = img;
+            engineToggle.innerHTML = `<img src="${currentImg}" alt="${currentEngine}">`;
+            engineItems.forEach(item => {
+                item.classList.remove('active');
+                if(item.dataset.engine === engine) item.classList.add('active');
+            });
+            engineModalItems.forEach(item => {
+                item.classList.remove('active');
+                if(item.dataset.engine === engine) item.classList.add('active');
+            });
+            engineList.classList.remove('show');
+            closeEngineModalFunc();
+        }
+        function openShareModal() {
+            shareModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            hideCustomMenu();
+        }
+        function closeShareModalFunc() {
+            shareModal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+        function copyShareLink() {
+            shareLink.select();
+            document.execCommand('copy');
+            copyBtn.textContent = '✅';
+            setTimeout(() => {
+                copyBtn.textContent = '📋';
+            }, 1500);
+        }
+        engineToggle.addEventListener('click', function() {
+            engineList.classList.toggle('show');
+        });
+        engineItems.forEach(item => {
+            item.addEventListener('click', function() {
+                changeEngine(this.dataset.engine, this.dataset.img);
+            });
+        });
+        engineModalItems.forEach(item => {
+            item.addEventListener('click', function() {
+                changeEngine(this.dataset.engine, this.dataset.img);
+            });
+        });
+        function isUrl(str) {
+            const urlRegex = /^(http|https):\/\/|^192\.|^www\./i;
+            return urlRegex.test(str);
+        }
+        function performSearchOrJump() {
+            const content = searchInput.value.trim();
+            if (!content || content.length === 0) {
+                alert('请输入有效的网址/搜索内容/插件名称/音乐名称！');
+                searchInput.focus();
+                return;
+            }
+            let targetUrl = '';
+            if (isUrl(content)) {
+                targetUrl = content.startsWith('http') ? content : `https://${content}`;
+            } else {
+                const encodedKeyword = encodeURIComponent(content);
+                if (currentEngine === 'baidu') {
+                    targetUrl = `https://www.baidu.com/s?wd=${encodedKeyword}&tn=68019929_5_oem_dg`;
+                } else if (currentEngine === 'bing') {
+                    targetUrl = `https://cn.bing.com/search?q=${encodedKeyword}&form=ANNTH1`;
+                } else if (currentEngine === 'douyin') {
+                    targetUrl = `https://www.douyin.com/search/${encodedKeyword}?aid=8850f704-6137-4d66-8070-dbf501d0819d&type=general`;
+                } else if (currentEngine === 'edge') {
+                    targetUrl = `https://microsoftedge.microsoft.com/addons/search/${encodedKeyword}`;
+                } else if (currentEngine === 'music') {
+                    targetUrl = `https://www.myfreemp3.com.cn/?page=audioPage&type=netease&name=${encodedKeyword}`;
+                }
+            }
+            const newTab = window.open(targetUrl, '_blank');
+            if (!newTab) {
+                alert('跳转失败！浏览器已拦截弹窗，请允许此页面的弹窗权限后重试。');
+                window.location.href = targetUrl;
+            }
+            searchInput.value = '';
+        }
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const bgImg = document.getElementById('bg-img');
+                bgImg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        function openAboutModal() {
+            aboutModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            hideCustomMenu();
+        }
+        function closeAboutModal() {
+            aboutModal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+        function showCustomMenu(e) {
+            e.preventDefault();
+            const x = e.clientX;
+            const y = e.clientY;
+            customMenu.style.left = `${x}px`;
+            customMenu.style.top = `${y}px`;
+            customMenu.classList.add('show');
+        }
+        function hideCustomMenu() {
+            customMenu.classList.remove('show');
+        }
+        document.addEventListener('contextmenu', showCustomMenu);
+        document.addEventListener('click', function(e) {
+            if (!engineToggle.contains(e.target) && !engineList.contains(e.target)) {
+                engineList.classList.remove('show');
+            }
+            if (aboutModal.classList.contains('show') && e.target === aboutModal) {
+                closeAboutModal();
+            }
+            if (engineModal.classList.contains('show') && e.target === engineModal) {
+                closeEngineModalFunc();
+            }
+            if (shareModal.classList.contains('show') && e.target === shareModal) {
+                closeShareModalFunc();
+            }
+            if (!customMenu.contains(e.target)) {
+                hideCustomMenu();
+            }
+        });
+        menuAbout.addEventListener('click', openAboutModal);
+        menuEngine.addEventListener('click', openEngineModal);
+        menuWallpaper.addEventListener('click', function() {
+            imageUpload.click();
+            hideCustomMenu();
+        });
+        menuShare.addEventListener('click', openShareModal);
+        searchBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            performSearchOrJump();
+        });
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                e.preventDefault();
+                performSearchOrJump();
+            }
+        });
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                e.preventDefault();
+                performSearchOrJump();
+            }
+        });
+        uploadBtn.addEventListener('click', function() {
+            imageUpload.click();
+        });
+        imageUpload.addEventListener('change', handleImageUpload);
+        aboutBtn.addEventListener('click', openAboutModal);
+        closeModal.addEventListener('click', closeAboutModal);
+        closeEngineModal.addEventListener('click', closeEngineModalFunc);
+        shareBtn.addEventListener('click', openShareModal);
+        closeShareModal.addEventListener('click', closeShareModalFunc);
+        copyBtn.addEventListener('click', copyShareLink);
+        setRandomBackground();
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+    <script src="index.js"></script>
+</body>
+</html>
